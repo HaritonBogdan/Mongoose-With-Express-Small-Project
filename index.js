@@ -3,8 +3,10 @@ const app = express();
 const path = require('path');
 const mongoose = require('mongoose');
 const methodOverride = require('method-override');
+const AppError = require("./AppError");
 
 const Product = require('./models/product');
+const ObjectID = require('mongoose').Types.ObjectId;
 
 main().catch(err => console.log(err));
 async function main() {
@@ -41,15 +43,27 @@ app.post('/products', async (req, res) => {
     res.redirect(`/products/${newProduct._id}`);
 })
 
-app.get('/products/:id', async (req, res) => {
+app.get('/products/:id', async (req, res, next) => {
     const { id } = req.params;
+    if (!ObjectID.isValid(id)) {
+        return next(new AppError('Invalid Id', 400));
+    }
     const product = await Product.findById(id)
+    if (!product) {
+        return next(new AppError('Product Not Found', 404));
+    }
     res.render('products/show', { product })
 })
 
-app.get('/products/:id/edit', async (req, res) => {
+app.get('/products/:id/edit', async (req, res, next) => {
     const { id } = req.params;
+    if (!ObjectID.isValid(id)) {
+        return next(new AppError('Invalid Id', 400));
+    }
     const product = await Product.findById(id);
+    if (!product) {
+        return next(new AppError('Product Not Found', 404));
+    }
     res.render("products/edit", { product, categories });
 })
 
@@ -63,6 +77,11 @@ app.delete('/products/:id', async (req, res) => {
     const { id } = req.params;
     const deleteProduct = await Product.findByIdAndDelete(id);
     res.redirect('/products');
+})
+
+app.use((err, req, res, next) => {
+    const { status = 500, message = "Something Went Wrong!" } = err;
+    res.status(status).send(message);
 })
 
 app.listen(3000, () => {
