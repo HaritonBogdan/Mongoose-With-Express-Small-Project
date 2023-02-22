@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
-        require: true
+        required: [true, 'name cannot be blank']
     },
     price: {
         type: Number,
-        require: true,
+        required: true,
         min: 0
     },
     category: {
