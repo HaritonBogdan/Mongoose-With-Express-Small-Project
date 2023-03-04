@@ -8,6 +8,10 @@ const AppError = require("./AppError");
 const Product = require('./models/product');
 const Farm = require('./models/farm');
 const ObjectID = require('mongoose').Types.ObjectId;
+const session = require('express-session');
+const flash = require('connect-flash');
+
+const sessionOptions = { secret: 'thisisnotagoodsecret', resave: false, saveUninitialized: false };
 
 main().catch(err => console.log(err));
 async function main() {
@@ -20,6 +24,13 @@ app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
+app.use(session(sessionOptions));
+app.use(flash());
+
+app.use((req, res, next) => {
+    res.locals.messages = req.flash('success');
+    next();
+})
 
 const categories = ['fruit', 'vegetable', 'dairy'];
 
@@ -44,6 +55,7 @@ app.get('/farms/new', (req, res) => {
 app.post('/farms', wrapAsync(async (req, res, next) => {
     const farm = new Farm(req.body);
     await farm.save()
+    req.flash('success', 'Successfully made a new farm!');
     res.redirect('/farms')
 }))
 
